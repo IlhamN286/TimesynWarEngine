@@ -2,7 +2,7 @@ name: Build Timesyn War Engine APK
 
 on:
   push:
-    branches: [ main, master, "setup/**" ]
+    branches: [ main, master, "setup/**", "feature/**" ]
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:

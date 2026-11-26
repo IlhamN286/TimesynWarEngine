@@ -77,6 +77,8 @@ class AutoClickAccessibilityService : AccessibilityService() {
     private var anchorTargetElapsedMs: Long = 0L
     private var executionMode = MODE_SHIPPING_REFRESH
     private var refreshDelayMs = 320L
+    private var executionOffsetMs = 0L
+    private var clickIntervalMs = 230L
     private var autoStopOnPageChange = true
     private var initialWindowClass: String? = null
     private var statusTextRef: TextView? = null
@@ -191,6 +193,9 @@ class AutoClickAccessibilityService : AccessibilityService() {
         super.onDestroy()
     }
 
+    /** True while a scheduled countdown or automated action is active. */
+    fun isCalibrationBusy(): Boolean = isScheduled.get() || isExecuting.get()
+
     private fun overlayType(): Int =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -203,6 +208,8 @@ class AutoClickAccessibilityService : AccessibilityService() {
         scheduledEpochMs: Long,
         mode: Int,
         customRefreshDelayMs: Long,
+        executionOffsetMs: Long,
+        clickIntervalMs: Long,
         enableAutoStop: Boolean
     ) {
         removeOverlay()
@@ -215,6 +222,8 @@ class AutoClickAccessibilityService : AccessibilityService() {
 
         executionMode = mode
         refreshDelayMs = customRefreshDelayMs.coerceIn(180L, 1200L)
+        this.executionOffsetMs = executionOffsetMs.coerceIn(-500L, 500L)
+        this.clickIntervalMs = clickIntervalMs.coerceIn(180L, 1000L)
         autoStopOnPageChange = enableAutoStop
         pingCalibratedThisRun.set(false)
 
@@ -563,7 +572,8 @@ class AutoClickAccessibilityService : AccessibilityService() {
                     calibrateShopeeTtfbAndWarmup()
                 }
 
-                val effectiveRemaining = rawRemaining - dynamicPingLeadMs
+                // Positive user offset means start the click sequence earlier; negative means later.
+                val effectiveRemaining = rawRemaining - dynamicPingLeadMs - executionOffsetMs
 
                 if (effectiveRemaining <= 0L) {
                     if (isScheduled.compareAndSet(true, false)) {
@@ -642,7 +652,7 @@ class AutoClickAccessibilityService : AccessibilityService() {
                         params = target2Params,
                         fallbackKeywords = listOf("Buat Pesanan", "Checkout", "Bayar Sekarang")
                     )
-                    handler.postDelayed(this, 215L + random.nextInt(15))
+                    handler.postDelayed(this, clickIntervalMs)
                 }
             }
 
@@ -661,10 +671,10 @@ class AutoClickAccessibilityService : AccessibilityService() {
                         params = target1Params,
                         fallbackKeywords = listOf("Buat Pesanan", "Konfirmasi", "Beli Sekarang")
                     )
-                    handler.postDelayed(this, 215L + random.nextInt(15))
+                    handler.postDelayed(this, clickIntervalMs)
                 }
             }
-            handler.postDelayed(singleBurstRunnable, 215L)
+            handler.postDelayed(singleBurstRunnable, clickIntervalMs)
         }
     }
 
