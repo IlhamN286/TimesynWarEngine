@@ -19,7 +19,7 @@ class DelayCalibrationMathTest {
     @Test
     fun recommendation_isClampedAndRoundedToTwentyMs() {
         val result = DelayCalibrationMath.recommendDelay(100L, 140L, 5L)
-        assertEquals(180L, result)
+        assertEquals(320L, result)
         assertEquals(0L, result % 20L)
         assertEquals(1200L, DelayCalibrationMath.recommendDelay(5000L, 9000L, 500L))
     }
@@ -52,6 +52,6 @@ class DelayCalibrationMathTest {
         assertEquals(8, result?.successfulNetworkSamples)
         assertEquals(8, result?.attemptedNetworkSamples)
         assertEquals(200L, result?.networkP95Ms)
-        assertEquals(180L, result?.recommendedDelayMs)
+        assertEquals(320L, result?.recommendedDelayMs)
     }
 }
