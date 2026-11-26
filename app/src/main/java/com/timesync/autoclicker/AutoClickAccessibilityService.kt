@@ -271,7 +271,10 @@ class AutoClickAccessibilityService : AccessibilityService() {
         } else {
             profile.layout.actions.filter { it.enabled }.sortedBy { it.order }.forEach { action ->
                 val view = CrosshairTargetView(this, action.order.toString(), "#FACC15")
-                val left = (action.x * sw - dp(27)).toInt().coerceIn(0, (sw - dp(54)).coerceAtLeast(0))
+                val horizontalInset = dp(16)
+                val usableWidth = (sw - horizontalInset * 2).coerceAtLeast(1)
+                val centerX = horizontalInset + action.x * usableWidth
+                val left = (centerX - dp(27)).toInt().coerceIn(0, (sw - dp(54)).coerceAtLeast(0))
                 val top = (action.y * sh + getStatusBarHeight() - dp(27)).toInt().coerceIn(0, (sh - dp(54)).coerceAtLeast(0))
                 val params = createCrosshairParams(left, top)
                 profileTargetViews.add(view to params)
@@ -655,7 +658,8 @@ class AutoClickAccessibilityService : AccessibilityService() {
     private fun performProfileTap(action: ActionPoint, onComplete: (Boolean) -> Unit) {
         val sw = resources.displayMetrics.widthPixels.toFloat()
         val sh = resources.displayMetrics.heightPixels.toFloat()
-        val x = (action.x * sw).coerceIn(1f, sw - 1f)
+        val horizontalInset = dp(16).toFloat()
+        val x = (horizontalInset + action.x * (sw - horizontalInset * 2f)).coerceIn(1f, sw - 1f)
         val y = (action.y * sh + getStatusBarHeight()).coerceIn(1f, sh - 1f)
         val path = Path().apply { moveTo(x, y) }
         val gesture = GestureDescription.Builder()
