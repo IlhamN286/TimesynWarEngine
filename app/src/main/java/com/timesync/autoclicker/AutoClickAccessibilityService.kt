@@ -191,6 +191,9 @@ class AutoClickAccessibilityService : AccessibilityService() {
         super.onDestroy()
     }
 
+    /** True while a scheduled countdown or automated action is active. */
+    fun isCalibrationBusy(): Boolean = isScheduled.get() || isExecuting.get()
+
     private fun overlayType(): Int =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
