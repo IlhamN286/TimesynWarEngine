@@ -687,7 +687,7 @@ class AutoClickAccessibilityService : AccessibilityService() {
                 if (!success) {
                     stopExecution("GESTURE GAGAL")
                 } else {
-                    val delay = action.delayAfterMs.takeIf { it > 0L } ?: profile.timing.clickIntervalMs
+                    val delay = action.delayAfterMs.takeIf { it > 0L } ?:\n                        if (index == 0) profile.timing.refreshDelayMs else profile.timing.clickIntervalMs
                     handler.postDelayed({ runAt(index + 1) }, delay)
                 }
             }
