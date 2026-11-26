@@ -14,6 +14,10 @@
         <package android:name="com.shopee.id" />
         <package android:name="com.shopee.lite.id" />
         <package android:name="com.shopee.lite" />
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
     </queries>
 
     <application
@@ -22,6 +26,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TimesynWarEngine"
         tools:targetApi="34">
+
+        <activity
+            android:name=".profile.ProfileLayoutEditorActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".profile.ApplicationProfilesActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name=".MainActivity"
