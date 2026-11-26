@@ -59,7 +59,7 @@ internal object DelayCalibrationMath {
 }
 
 internal object DelayCalibrationRunner {
-    private const val ENDPOINT = "https://www.google.com/generate_204"
+    private const val ENDPOINT = "https://www.google.com/"
     private const val NETWORK_ATTEMPTS = 8
     private const val NETWORK_TIMEOUT_MS = 1800
     private const val LOCAL_SAMPLES = 20
@@ -84,6 +84,8 @@ internal object DelayCalibrationRunner {
                         val responseCode = connection.responseCode
                         val elapsed = (SystemClock.elapsedRealtime() - started).coerceAtLeast(1L)
                         if (responseCode in 200..299) networkSamples.add(elapsed)
+                    } catch (_: Exception) {
+                        // Count this request as a failed sample and continue with the remaining attempts.
                     } finally {
                         connection?.disconnect()
                     }
