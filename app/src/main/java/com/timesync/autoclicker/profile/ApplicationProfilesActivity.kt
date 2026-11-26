@@ -6,6 +6,12 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
+import android.provider.Settings
+import android.net.Uri
+import java.util.Calendar
+import java.util.TimeZone
+import com.timesync.autoclicker.AutoClickAccessibilityService
+import com.timesync.autoclicker.TargetTimeParser
 import android.text.InputType
 import android.view.Gravity
 import android.widget.Button
@@ -89,6 +95,7 @@ class ApplicationProfilesActivity : Activity() {
             })
             val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
             row.addView(smallButton("EDIT") { showEditor(profile) }, LinearLayout.LayoutParams(0, dp(42), 1f))
+            row.addView(smallButton("PAKAI") { confirmLaunchProfile(profile) }, LinearLayout.LayoutParams(0, dp(42), 1f))
             row.addView(smallButton("LAYOUT") {
                 startActivity(Intent(this@ApplicationProfilesActivity, ProfileLayoutEditorActivity::class.java)
                     .putExtra(EXTRA_PROFILE_ID, profile.id))
@@ -110,6 +117,64 @@ class ApplicationProfilesActivity : Activity() {
             card.addView(row)
             val params = LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, dp(8), 0, dp(8)) }
             list.addView(card, params)
+        }
+    }
+
+    private fun confirmLaunchProfile(profile: ApplicationProfile) {
+        if (profile.layout.actions.none { it.enabled }) {
+            toast("Tambahkan minimal satu action pada Layout terlebih dahulu.")
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Jalankan profile?")
+            .setMessage("Profile ini akan menjalankan satu urutan tap pada aplikasi " + profile.name +
+                ". Uji dahulu pada layar yang aman. Jangan gunakan pada tombol pembayaran atau konfirmasi transaksi.")
+            .setNegativeButton("Batal", null)
+            .setPositiveButton("Lanjut") { _, _ -> launchProfile(profile) }
+            .show()
+    }
+
+    private fun launchProfile(profile: ApplicationProfile) {
+        if (ProfileValidator.validate(profile) != null) {
+            toast(ProfileValidator.validate(profile) ?: "Profile tidak valid")
+            return
+        }
+        if (!Settings.canDrawOverlays(this)) {
+            toast("Aktifkan izin Tampil di Atas Aplikasi terlebih dahulu.")
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+            return
+        }
+        val service = AutoClickAccessibilityService.instance
+        if (service == null) {
+            toast("Aktifkan Accessibility Service TimesynWarEngine terlebih dahulu.")
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            return
+        }
+        val launchIntent = packageManager.getLaunchIntentForPackage(profile.packageName)
+        if (launchIntent == null) {
+            toast("Aplikasi tidak ditemukan atau tidak memiliki launcher activity.")
+            return
+        }
+        val timeOfDay = TargetTimeParser.parseMillisOfDay(profile.timing.targetTime) ?: run {
+            toast("Target time tidak valid")
+            return
+        }
+        val target = Calendar.getInstance(TimeZone.getTimeZone("Asia/Jakarta")).apply {
+            val now = System.currentTimeMillis() + AutoClickAccessibilityService.ntpOffsetMs
+            timeInMillis = now
+            set(Calendar.HOUR_OF_DAY, timeOfDay / 3_600_000)
+            set(Calendar.MINUTE, (timeOfDay % 3_600_000) / 60_000)
+            set(Calendar.SECOND, (timeOfDay % 60_000) / 1_000)
+            set(Calendar.MILLISECOND, timeOfDay % 1_000)
+            if (timeInMillis <= now) add(Calendar.DAY_OF_YEAR, 1)
+        }
+        service.showProfileOverlay(profile, target.timeInMillis)
+        try {
+            startActivity(launchIntent)
+            toast("Profile aktif. Pastikan aplikasi target terbuka sebelum menekan MULAI.")
+        } catch (_: Exception) {
+            service.removeOverlay()
+            toast("Gagal membuka aplikasi target.")
         }
     }
 
