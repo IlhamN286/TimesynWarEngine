@@ -8,7 +8,7 @@ class DelayCalibrationMathTest {
 
     @Test
     fun percentile95_usesUpperTailSample() {
-        assertEquals(95L, DelayCalibrationMath.percentile95((1L..20L).toList()))
+        assertEquals(19L, DelayCalibrationMath.percentile95((1L..20L).toList()))
     }
 
     @Test
