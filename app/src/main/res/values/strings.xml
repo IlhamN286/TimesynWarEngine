@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">Timesyn War Engine</string>
     <string name="accessibility_service_label">Timesyn War Engine (Auto Clicker)</string>
-    <string name="accessibility_service_description">Mesin eksekusi presisi waktu atomik dan bantuan sentuhan otomatis untuk flash sale.</string>
+    <string name="accessibility_service_description">Digunakan untuk membantu sentuhan otomatis hanya pada aplikasi Shopee yang didukung saat fitur dijalankan. Layanan membaca elemen layar aktif untuk menentukan target klik dan mendeteksi perpindahan halaman agar dapat berhenti otomatis. Data layar tidak dikirim ke server oleh fitur ini.</string>
 </resources>

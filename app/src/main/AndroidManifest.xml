@@ -17,7 +17,8 @@
     </queries>
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="false"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.TimesynWarEngine"
