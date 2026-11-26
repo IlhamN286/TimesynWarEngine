@@ -69,7 +69,7 @@ class MainActivity : AppCompatActivity() {
             typeface = Typeface.DEFAULT_BOLD
         }
         val tvSub = TextView(this).apply {
-            text = "v4.3 • Millisecond Timing + Adjustable Click"
+            text = "v4.4 • Application Profiles + Custom Layout"
             setTextColor(Color.parseColor("#38BDF8"))
             textSize = 12f
             setPadding(0, dp(2), 0, dp(16))
