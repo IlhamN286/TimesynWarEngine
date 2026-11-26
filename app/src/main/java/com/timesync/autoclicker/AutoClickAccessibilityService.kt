@@ -272,7 +272,7 @@ class AutoClickAccessibilityService : AccessibilityService() {
             profile.layout.actions.filter { it.enabled }.sortedBy { it.order }.forEach { action ->
                 val view = CrosshairTargetView(this, action.order.toString(), "#FACC15")
                 val left = (action.x * sw - dp(27)).toInt().coerceIn(0, (sw - dp(54)).coerceAtLeast(0))
-                val top = (action.y * sh - dp(27)).toInt().coerceIn(0, (sh - dp(54)).coerceAtLeast(0))
+                val top = (action.y * sh + getStatusBarHeight() - dp(27)).toInt().coerceIn(0, (sh - dp(54)).coerceAtLeast(0))
                 val params = createCrosshairParams(left, top)
                 profileTargetViews.add(view to params)
                 try { windowManager.addView(view, params) } catch (_: Exception) { }
