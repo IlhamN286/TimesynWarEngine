@@ -4,7 +4,7 @@ import com.timesync.autoclicker.TargetTimeParser
 
 object ProfileValidator {
     const val MAX_ACTIONS = 10
-    const val MIN_ACTION_DELAY_MS = 100L
+    const val MIN_ACTION_DELAY_MS = 0L
     const val MAX_ACTION_DELAY_MS = 5000L
 
     fun validate(profile: ApplicationProfile): String? {
@@ -21,7 +21,7 @@ object ProfileValidator {
             return "Koordinat harus berada dalam rentang 0–1."
         }
         if (profile.layout.actions.any { it.delayAfterMs !in MIN_ACTION_DELAY_MS..MAX_ACTION_DELAY_MS }) {
-            return "Jeda setiap action harus 100–5000 ms."
+            return "Jeda khusus action harus 0–5000 ms (0 memakai timing profile)."
         }
         if (profile.layout.actions.map { it.order }.toSet().size != profile.layout.actions.size) {
             return "Urutan action tidak boleh duplikat."
