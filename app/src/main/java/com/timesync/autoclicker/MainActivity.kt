@@ -38,9 +38,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvAccessStatus: TextView
     private lateinit var etTargetTime: EditText
     private lateinit var etRefreshDelay: EditText
+    private lateinit var etExecutionOffset: EditText
+    private lateinit var etClickInterval: EditText
     private lateinit var switchAutoStop: Switch
 
-    private val clockFmt = SimpleDateFormat("HH:mm:ss.S", Locale.US).apply {
+    private val clockFmt = SimpleDateFormat("HH:mm:ss:SSS", Locale.US).apply {
         timeZone = TimeZone.getTimeZone("Asia/Jakarta")
     }
 
@@ -184,7 +186,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             val lblTime = TextView(this@MainActivity).apply {
-                text = "Jam Target Eksekusi (Format HH:mm:ss - WIB):"
+                text = "Jam Target Eksekusi (Format HH:mm:ss:SSS - WIB):"
                 setTextColor(Color.parseColor("#CBD5E1"))
                 textSize = 12f
             }
@@ -196,12 +198,14 @@ class MainActivity : AppCompatActivity() {
             }
             val defaultTimeStr = String.format(
                 Locale.US,
-                "%02d:00:00",
+                "%02d:00:00:000",
                 nextHourCal.get(Calendar.HOUR_OF_DAY)
             )
 
             etTargetTime = EditText(this@MainActivity).apply {
                 setText(prefs.getString("target_time_str", defaultTimeStr))
+                inputType = InputType.TYPE_CLASS_TEXT
+                setSingleLine(true)
                 setTextColor(Color.WHITE)
                 textSize = 16f
                 typeface = Typeface.MONOSPACE
@@ -217,7 +221,7 @@ class MainActivity : AppCompatActivity() {
                 orientation = LinearLayout.HORIZONTAL
                 setPadding(0, dp(8), 0, dp(12))
             }
-            for (preset in listOf("00:00:00", "12:00:00", "18:00:00", "20:00:00")) {
+            for (preset in listOf("00:00:00:000", "12:00:00:000", "18:00:00:000", "20:00:00:000")) {
                 val b = Button(this@MainActivity).apply {
                     text = preset.substring(0, 5)
                     textSize = 11f
@@ -238,6 +242,46 @@ class MainActivity : AppCompatActivity() {
             }
             etRefreshDelay = EditText(this@MainActivity).apply {
                 setText(prefs.getLong("refresh_delay_ms", 320L).coerceIn(180L, 1200L).toString())
+                inputType = InputType.TYPE_CLASS_NUMBER
+                setSingleLine(true)
+                setTextColor(Color.WHITE)
+                textSize = 15f
+                typeface = Typeface.MONOSPACE
+                setPadding(dp(12), dp(10), dp(12), dp(10))
+                background = GradientDrawable().apply {
+                    cornerRadius = dp(8).toFloat()
+                    setColor(Color.parseColor("#0F172A"))
+                    setStroke(dp(1), Color.parseColor("#475569"))
+                }
+            }
+
+            val lblExecutionOffset = TextView(this@MainActivity).apply {
+                text = "Koreksi waktu klik Target 1 (ms, -500 sampai +500; positif = lebih awal):"
+                setTextColor(Color.parseColor("#CBD5E1"))
+                textSize = 12f
+            }
+            etExecutionOffset = EditText(this@MainActivity).apply {
+                setText(prefs.getInt("execution_offset_ms", 0).toString())
+                inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_SIGNED
+                setSingleLine(true)
+                setTextColor(Color.WHITE)
+                textSize = 15f
+                typeface = Typeface.MONOSPACE
+                setPadding(dp(12), dp(10), dp(12), dp(10))
+                background = GradientDrawable().apply {
+                    cornerRadius = dp(8).toFloat()
+                    setColor(Color.parseColor("#0F172A"))
+                    setStroke(dp(1), Color.parseColor("#475569"))
+                }
+            }
+
+            val lblClickInterval = TextView(this@MainActivity).apply {
+                text = "Interval klik berulang (ms, 180–1000):"
+                setTextColor(Color.parseColor("#CBD5E1"))
+                textSize = 12f
+            }
+            etClickInterval = EditText(this@MainActivity).apply {
+                setText(prefs.getLong("click_interval_ms", 230L).coerceIn(180L, 1000L).toString())
                 inputType = InputType.TYPE_CLASS_NUMBER
                 setSingleLine(true)
                 setTextColor(Color.WHITE)
@@ -277,6 +321,14 @@ class MainActivity : AppCompatActivity() {
             addView(lblDelay)
             addView(spacer(4))
             addView(etRefreshDelay)
+            addView(spacer(10))
+            addView(lblExecutionOffset)
+            addView(spacer(4))
+            addView(etExecutionOffset)
+            addView(spacer(8))
+            addView(lblClickInterval)
+            addView(spacer(4))
+            addView(etClickInterval)
             addView(spacer(8))
             addView(btnCalibrateDelay)
             addView(switchAutoStop)
@@ -363,21 +415,38 @@ class MainActivity : AppCompatActivity() {
         }
 
         val timeText = etTargetTime.text.toString().trim()
-        val parts = timeText.split(":")
-        if (parts.size != 3) {
-            Toast.makeText(this, "Format jam harus HH:mm:ss (contoh: 20:00:00)", Toast.LENGTH_SHORT).show()
+        val timeOfDayMs = TargetTimeParser.parseMillisOfDay(timeText)
+        if (timeOfDayMs == null) {
+            Toast.makeText(this, "Format wajib HH:mm:ss:SSS (contoh: 20:00:00:250)", Toast.LENGTH_LONG).show()
             return
         }
 
-        val hh = parts[0].toIntOrNull() ?: 20
-        val mm = parts[1].toIntOrNull() ?: 0
-        val ss = parts[2].toIntOrNull() ?: 0
-        val delayMs = etRefreshDelay.text.toString().trim().toLongOrNull()?.coerceIn(180L, 1200L) ?: 320L
+        val hh = timeOfDayMs / 3_600_000
+        val mm = (timeOfDayMs % 3_600_000) / 60_000
+        val ss = (timeOfDayMs % 60_000) / 1_000
+        val milli = timeOfDayMs % 1_000
+        val delayMs = etRefreshDelay.text.toString().trim().toLongOrNull()
+        val executionOffsetMs = etExecutionOffset.text.toString().trim().toIntOrNull()
+        val clickIntervalMs = etClickInterval.text.toString().trim().toLongOrNull()
+        if (delayMs == null || delayMs !in 180L..1200L) {
+            Toast.makeText(this, "Delay Target 1 ke Target 2 harus 180–1200 ms.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (executionOffsetMs == null || executionOffsetMs !in -500..500) {
+            Toast.makeText(this, "Koreksi waktu klik harus -500 sampai +500 ms.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (clickIntervalMs == null || clickIntervalMs !in 180L..1000L) {
+            Toast.makeText(this, "Interval klik berulang harus 180–1000 ms.", Toast.LENGTH_SHORT).show()
+            return
+        }
         val autoStop = switchAutoStop.isChecked
 
         getSharedPreferences("timesyn_war_prefs", Context.MODE_PRIVATE).edit()
             .putString("target_time_str", timeText)
             .putLong("refresh_delay_ms", delayMs)
+            .putInt("execution_offset_ms", executionOffsetMs)
+            .putLong("click_interval_ms", clickIntervalMs)
             .putBoolean("auto_stop_page", autoStop)
             .apply()
 
@@ -388,7 +457,7 @@ class MainActivity : AppCompatActivity() {
             set(Calendar.HOUR_OF_DAY, hh.coerceIn(0, 23))
             set(Calendar.MINUTE, mm.coerceIn(0, 59))
             set(Calendar.SECOND, ss.coerceIn(0, 59))
-            set(Calendar.MILLISECOND, 0)
+            set(Calendar.MILLISECOND, milli)
             if (timeInMillis <= atomicNow) {
                 add(Calendar.DAY_OF_YEAR, 1)
             }
@@ -398,6 +467,8 @@ class MainActivity : AppCompatActivity() {
             scheduledEpochMs = targetCal.timeInMillis,
             mode = AutoClickAccessibilityService.MODE_SHIPPING_REFRESH,
             customRefreshDelayMs = delayMs,
+            executionOffsetMs = executionOffsetMs.toLong(),
+            clickIntervalMs = clickIntervalMs,
             enableAutoStop = autoStop
         )
 
