@@ -48,7 +48,11 @@ class ProfileLayoutEditorActivity : Activity() {
             setPadding(0, dp(6), 0, dp(10))
         })
         canvasView = LayoutCanvas(profile.layout.actions) { actions -> updateActions(actions) }
-        root.addView(canvasView, LinearLayout.LayoutParams(-1, 0, 1f))
+        val displayWidthPx = resources.displayMetrics.widthPixels.coerceAtLeast(1)
+        val displayHeightPx = resources.displayMetrics.heightPixels.coerceAtLeast(1)
+        val previewWidthDp = (displayWidthPx / resources.displayMetrics.density).toInt() - 32
+        val previewHeightDp = (previewWidthDp * displayHeightPx.toFloat() / displayWidthPx).toInt()
+        root.addView(canvasView, LinearLayout.LayoutParams(-1, dp(previewHeightDp.coerceAtLeast(240))))
         root.addView(TextView(this).apply {
             text = "DAFTAR ACTION"
             setTextColor(Color.WHITE)
@@ -71,7 +75,12 @@ class ProfileLayoutEditorActivity : Activity() {
             }
         })
         root.addView(Button(this).apply { text = "KEMBALI"; setOnClickListener { finish() } })
-        setContentView(root)
+        val outerScroll = ScrollView(this).apply {
+            isFillViewport = true
+            setBackgroundColor(Color.rgb(15, 23, 42))
+            addView(root)
+        }
+        setContentView(outerScroll)
         renderActions()
     }
 
