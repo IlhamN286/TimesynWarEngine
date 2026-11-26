@@ -44,7 +44,7 @@ Panel **Kalibrasi Jeda Otomatis (Hybrid / Safe)** memuat:
 - Minimal 5 sampel network berhasil dari maksimal 8 percobaan; jika tidak tercapai, tampilkan kalibrasi gagal/tidak cukup data dan jangan mengubah konfigurasi.
 - Local sampling minimal 20 siklus.
 - Gunakan p95, bukan rata-rata saja, untuk mengurangi sensitivitas terhadap lonjakan.
-- Nilai rekomendasi tidak boleh di bawah 180 ms atau di atas 1200 ms pada versi aplikasi saat ini.
+- Input manual dibatasi 180–1200 ms. Rekomendasi otomatis memiliki batas bawah konservatif 320 ms karena pengujian safe tidak mengukur respons UI target secara langsung; batas atas rekomendasi 1200 ms.
 - Nilai ambang final harus ditinjau setelah hasil uji perangkat nyata; angka ini adalah parameter awal, bukan standar universal.
 
 ## Kriteria penerimaan
@@ -55,3 +55,11 @@ Panel **Kalibrasi Jeda Otomatis (Hybrid / Safe)** memuat:
 - Terapkan hanya mengubah jeda setelah konfirmasi pengguna.
 - Tombol Close aktif setelah proses selesai/gagal dan menutup panel tanpa menghentikan service.
 - Semua unit test dan build debug lulus.
+
+
+## Status implementasi branch feature/auto-delay-calibration-safe
+- Engine kalibrasi dan dialog UI telah ditambahkan.
+- Kolom delay menggunakan keyboard numerik; rekomendasi dapat diterapkan dan disimpan.
+- Tombol Close aktif setelah kalibrasi berhasil/gagal.
+- Pengujian unit telah ditambahkan; build CI dan uji perangkat fisik masih menunggu verifikasi.
+- Endpoint jaringan hanya mengukur RTT HTTPS ke endpoint health publik. Hasil bukan ukuran langsung waktu respons Shopee, sehingga rekomendasi otomatis dijaga minimal 320 ms.
