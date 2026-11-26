@@ -11,8 +11,8 @@ android {
         applicationId = "com.timesync.autoclicker"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "4.2-WarEdition"
+        versionCode = 7
+        versionName = "4.3-WarEdition"
     }
 
     buildTypes {
