@@ -48,10 +48,8 @@ class ProfileLayoutEditorActivity : Activity() {
             setPadding(0, dp(6), 0, dp(10))
         })
         canvasView = LayoutCanvas(profile.layout.actions) { actions -> updateActions(actions) }
-        val displayWidthPx = resources.displayMetrics.widthPixels.coerceAtLeast(1)
         val displayHeightPx = resources.displayMetrics.heightPixels.coerceAtLeast(1)
-        val previewWidthDp = (displayWidthPx / resources.displayMetrics.density).toInt() - 32
-        val previewHeightDp = (previewWidthDp * displayHeightPx.toFloat() / displayWidthPx).toInt()
+        val previewHeightDp = (displayHeightPx / resources.displayMetrics.density).toInt()
         root.addView(canvasView, LinearLayout.LayoutParams(-1, dp(previewHeightDp.coerceAtLeast(240))))
         root.addView(TextView(this).apply {
             text = "DAFTAR ACTION"
