@@ -1,18 +1,18 @@
 # Timesyn War Engine
 
-Android project setup and unit-test groundwork.
+Android application project (v4.1).
 
-## Current branch status
+## Project setup
 
-The `setup/unit-tests-ci` branch contains the Gradle configuration, extracted time-sync calculation helper, eight JUnit test cases, Android manifest/resources, and a manual GitHub Actions workflow.
+- Android Gradle Plugin: 8.4.2
+- Kotlin: 1.9.24
+- Compile SDK: 34
+- Minimum SDK: 26
+- Target SDK: 34
+- JDK: 17
+- Gradle: 8.7
 
-**Important:** the original app source files `MainActivity.kt` and `AutoClickAccessibilityService.kt` are not yet present in this branch. The project is therefore not yet a complete buildable app, and the tests/build have not been run. The workflow is manual-only until those source files are added, to avoid triggering a known-incomplete build.
-
-## Requirements
-
-- Android Studio with Android SDK 34
-- JDK 17
-- Gradle 8.7
+Open the repository in Android Studio with Android SDK 34 installed. The GitHub Actions workflow installs Gradle 8.7 and JDK 17 automatically.
 
 ## Run unit tests
 
@@ -26,8 +26,17 @@ gradle testDebugUnitTest
 gradle assembleDebug
 ```
 
-## Added test coverage
+## Unit-test coverage
 
-`TimeSyncMathTest` includes eight test methods covering HTTP Date parsing, invalid/missing headers, offset estimation, negative RTT handling, median selection (odd/even/empty), and ping-lead clamping.
+Eight local JVM tests cover the extracted `TimeSyncMath` helper:
 
-Network calls and Android accessibility-service behavior are not covered by these local JVM tests.
+- HTTP Date parsing (valid, missing, invalid)
+- Server offset estimation, including negative RTT input
+- Median selection for odd, even, and empty samples
+- Ping lead clamping
+
+The Android UI, accessibility service, overlay interactions, and live network requests are not covered by these JVM tests.
+
+## Continuous integration
+
+GitHub Actions runs `testDebugUnitTest` first, then `assembleDebug`, on pushes to `main`, `master`, or `setup/**`, and on pull requests targeting `main` or `master`. The generated debug APK is uploaded as the `TimesynWarEngine-Debug-APK` workflow artifact.
