@@ -332,6 +332,12 @@ class MainActivity : AppCompatActivity() {
             addView(etClickInterval)
             addView(spacer(8))
             addView(btnCalibrateDelay)
+            val btnProfiles = createActionButton("KELOLA PROFILE APLIKASI", "#7C3AED", "#FFFFFF").apply {
+                setOnClickListener {
+                    startActivity(Intent(this@MainActivity, com.timesync.autoclicker.profile.ApplicationProfilesActivity::class.java))
+                }
+            }
+            addView(btnProfiles)
             addView(switchAutoStop)
             addView(btnLaunch)
         }
