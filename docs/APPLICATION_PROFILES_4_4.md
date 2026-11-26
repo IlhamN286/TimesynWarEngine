@@ -7,7 +7,7 @@ Version 4.4 introduces locally stored application profiles. Each profile stores:
 - Execution offset (-500..+500 ms).
 - Click interval (180..1000 ms).
 - Target delay (180..1200 ms).
-- Up to 10 ordered, enabled/disabled TAP actions with normalized X/Y coordinates and per-action delay (100..5000 ms).
+- Up to 10 ordered, enabled/disabled TAP actions with normalized X/Y coordinates and optional per-action delay (0 or 100..5000 ms; 0 uses the profile default).
 
 ## Storage
 Profiles are stored as JSON in the app's private files directory in `application_profiles.json`. The repository has a schema version and supports create/update, list, delete, and duplicate. Duplicate profiles receive new profile and action IDs; profiles may share a package name.
@@ -20,7 +20,7 @@ X and Y are normalized to 0.0..1.0 relative to the layout preview. The execution
 - The target app is opened using its launcher activity.
 - The user must manually press MULAI after confirming the target app is foregrounded.
 - The custom sequence executes enabled actions once, in ascending order.
-- Each action uses its configured delay before the next action.
+- Each action uses its explicit delay when set; otherwise the first transition uses the profile Target Delay and later transitions use the profile Click Interval.
 - The active window package is checked before each action; execution stops if the foreground package no longer matches.
 - The TEST control sends only one tap to the first enabled action.
 - There is no automatic loop/repeat in custom profile mode.
