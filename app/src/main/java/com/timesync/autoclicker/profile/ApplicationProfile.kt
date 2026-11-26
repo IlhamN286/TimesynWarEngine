@@ -29,6 +29,6 @@ data class ActionPoint(
     val x: Float,
     val y: Float,
     val order: Int,
-    val delayAfterMs: Long = 250L,
+    val delayAfterMs: Long = 0L,
     val enabled: Boolean = true
 )
