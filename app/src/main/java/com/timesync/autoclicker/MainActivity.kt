@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.text.InputType
 import android.view.Gravity
 import android.view.accessibility.AccessibilityManager
 import android.widget.Button
@@ -66,7 +67,7 @@ class MainActivity : AppCompatActivity() {
             typeface = Typeface.DEFAULT_BOLD
         }
         val tvSub = TextView(this).apply {
-            text = "v4.1 • Dual-Engine Hybrid Tap + Popup-First Bypass"
+            text = "v4.2 • Hybrid Tap + Safe Delay Calibration"
             setTextColor(Color.parseColor("#38BDF8"))
             textSize = 12f
             setPadding(0, dp(2), 0, dp(16))
@@ -231,12 +232,14 @@ class MainActivity : AppCompatActivity() {
             }
 
             val lblDelay = TextView(this@MainActivity).apply {
-                text = "Jeda Target 1 (Konfirmasi) -> Target 2 (Buat Pesanan) [ms]:"
+                text = "Jeda Target 1 (Konfirmasi) -> Target 2 (Buat Pesanan) [180–1200 ms]:"
                 setTextColor(Color.parseColor("#CBD5E1"))
                 textSize = 12f
             }
             etRefreshDelay = EditText(this@MainActivity).apply {
-                setText(prefs.getLong("refresh_delay_ms", 320L).toString())
+                setText(prefs.getLong("refresh_delay_ms", 320L).coerceIn(180L, 1200L).toString())
+                inputType = InputType.TYPE_CLASS_NUMBER
+                setSingleLine(true)
                 setTextColor(Color.WHITE)
                 textSize = 15f
                 typeface = Typeface.MONOSPACE
@@ -246,6 +249,10 @@ class MainActivity : AppCompatActivity() {
                     setColor(Color.parseColor("#0F172A"))
                     setStroke(dp(1), Color.parseColor("#475569"))
                 }
+            }
+
+            val btnCalibrateDelay = createActionButton("KALIBRASI DELAY OTOMATIS (HYBRID / SAFE)", "#0E7490", "#FFFFFF").apply {
+                setOnClickListener { DelayCalibrationDialog.show(this@MainActivity, etRefreshDelay) }
             }
 
             switchAutoStop = Switch(this@MainActivity).apply {
@@ -270,6 +277,8 @@ class MainActivity : AppCompatActivity() {
             addView(lblDelay)
             addView(spacer(4))
             addView(etRefreshDelay)
+            addView(spacer(8))
+            addView(btnCalibrateDelay)
             addView(switchAutoStop)
             addView(btnLaunch)
         }
