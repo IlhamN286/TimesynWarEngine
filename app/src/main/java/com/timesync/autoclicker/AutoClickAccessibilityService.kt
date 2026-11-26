@@ -340,6 +340,10 @@ class AutoClickAccessibilityService : AccessibilityService() {
         val btnClose = createPillButton("✕", "#475569")
 
         btnStart.setOnClickListener {
+            if (activeProfile != null && !isTargetPackageActive()) {
+                statusText.text = "BUKA APP TARGET"
+                return@setOnClickListener
+            }
             if (isScheduled.compareAndSet(false, true)) {
                 isExecuting.set(false)
                 pingCalibratedThisRun.set(false)
@@ -696,12 +700,15 @@ class AutoClickAccessibilityService : AccessibilityService() {
                 val nowElapsed = SystemClock.elapsedRealtime()
                 val rawRemaining = anchorTargetElapsedMs - nowElapsed
 
-                if (rawRemaining in 4500L..5600L && pingCalibratedThisRun.compareAndSet(false, true)) {
+                if (activeProfile == null && rawRemaining in 4500L..5600L &&
+                    pingCalibratedThisRun.compareAndSet(false, true)
+                ) {
                     calibrateShopeeTtfbAndWarmup()
                 }
 
-                // Positive user offset means start the click sequence earlier; negative means later.
-                val effectiveRemaining = rawRemaining - dynamicPingLeadMs - executionOffsetMs
+                // Custom profiles use their own timing values and do not run the Shopee warm-up request.
+                val networkLead = if (activeProfile == null) dynamicPingLeadMs else 0L
+                val effectiveRemaining = rawRemaining - networkLead - executionOffsetMs
 
                 if (effectiveRemaining <= 0L) {
                     if (isScheduled.compareAndSet(true, false)) {
