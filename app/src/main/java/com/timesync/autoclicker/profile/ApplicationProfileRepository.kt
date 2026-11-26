@@ -31,7 +31,7 @@ class ApplicationProfileRepository(context: Context) {
     @Synchronized
     fun save(profile: ApplicationProfile): Boolean {
         if (ProfileValidator.validate(profile) != null) return false
-        val profiles = getAll().filterNot { it.id == profile.id || it.packageName == profile.packageName } + profile
+        val profiles = getAll().filterNot { it.id == profile.id } + profile
         return writeAll(profiles)
     }
 
