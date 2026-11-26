@@ -20,6 +20,7 @@ internal data class DelayCalibrationResult(
 internal object DelayCalibrationMath {
     const val MIN_DELAY_MS = 180L
     const val MAX_DELAY_MS = 1200L
+    private const val MIN_RECOMMENDED_DELAY_MS = 320L
     private const val DELAY_STEP_MS = 20L
 
     fun percentile95(samples: List<Long>): Long? {
@@ -32,7 +33,7 @@ internal object DelayCalibrationMath {
     fun recommendDelay(networkMedianMs: Long, networkP95Ms: Long, localP95Ms: Long): Long {
         val jitter = (networkP95Ms - networkMedianMs).coerceAtLeast(0L)
         val raw = maxOf(
-            MIN_DELAY_MS,
+            MIN_RECOMMENDED_DELAY_MS,
             (networkP95Ms * 0.35 + jitter * 0.50 + localP95Ms * 2.0).roundToLong()
         )
         val stepped = ((raw + DELAY_STEP_MS - 1) / DELAY_STEP_MS) * DELAY_STEP_MS
