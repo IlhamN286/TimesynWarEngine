@@ -121,7 +121,7 @@ class ApplicationProfileRepository(context: Context) {
                             x = a.optDouble("x").toFloat(),
                             y = a.optDouble("y").toFloat(),
                             order = a.optInt("order", i + 1),
-                            delayAfterMs = a.optLong("delayAfterMs", 250L),
+                            delayAfterMs = a.optLong("delayAfterMs", 0L),
                             enabled = a.optBoolean("enabled", true)
                         ))
                     }
