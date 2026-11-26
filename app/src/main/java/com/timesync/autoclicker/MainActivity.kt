@@ -69,7 +69,7 @@ class MainActivity : AppCompatActivity() {
             typeface = Typeface.DEFAULT_BOLD
         }
         val tvSub = TextView(this).apply {
-            text = "v4.2 • Hybrid Tap + Safe Delay Calibration"
+            text = "v4.3 • Millisecond Timing + Adjustable Click"
             setTextColor(Color.parseColor("#38BDF8"))
             textSize = 12f
             setPadding(0, dp(2), 0, dp(16))
@@ -195,6 +195,7 @@ class MainActivity : AppCompatActivity() {
                 add(Calendar.HOUR_OF_DAY, 1)
                 set(Calendar.MINUTE, 0)
                 set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
             }
             val defaultTimeStr = String.format(
                 Locale.US,
