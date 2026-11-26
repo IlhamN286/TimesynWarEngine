@@ -3,6 +3,7 @@
 Target device: Tecno Pova, Android 15
 
 ## Install and launch
+- [ ] Confirm the GitHub Actions build and unit-test job is green before using its APK artifact.
 - [ ] Download the Debug APK from the GitHub Actions artifact.
 - [ ] Install over the previous test build if Android permits the update; otherwise uninstall the old build first.
 - [ ] Confirm app version is 4.2-WarEdition (versionCode 6).
