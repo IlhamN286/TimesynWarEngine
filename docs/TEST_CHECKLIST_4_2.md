@@ -1,4 +1,4 @@
-# Manual Test Checklist — TimesynWarEngine 4.2
+# Manual Test Checklist — TimesynWarEngine 4.3
 
 Target device: Tecno Pova, Android 15
 
@@ -6,7 +6,7 @@ Target device: Tecno Pova, Android 15
 - [ ] Confirm the GitHub Actions build and unit-test job is green before using its APK artifact.
 - [ ] Download the Debug APK from the GitHub Actions artifact.
 - [ ] Install over the previous test build if Android permits the update; otherwise uninstall the old build first.
-- [ ] Confirm app version is 4.2-WarEdition (versionCode 6).
+- [ ] Confirm app version is 4.3-WarEdition (versionCode 7).
 - [ ] Open the app and confirm the main screen renders without crashing.
 
 ## Manual millisecond input
@@ -32,3 +32,13 @@ Target device: Tecno Pova, Android 15
 - [ ] Do not validate click speed against a live checkout/payment flow; use a harmless test screen only.
 
 Record actual recommended delay, Wi-Fi/mobile network, Android version, and any error text when reporting results.
+
+## Target time and click tuning (4.3)
+- [ ] Confirm target time accepts exactly HH:mm:ss:SSS, for example 20:00:00:250.
+- [ ] Confirm milliseconds 000 and 999 are accepted and malformed/out-of-range values are rejected.
+- [ ] Confirm the target time is scheduled using the entered millisecond component.
+- [ ] Confirm execution correction accepts -500 to +500 ms; positive values mean earlier execution and negative values mean later execution.
+- [ ] Confirm repeat click interval accepts 180–1000 ms and the configured value is used consistently.
+- [ ] Confirm Target 1 → Target 2 delay remains separately adjustable at 180–1200 ms.
+- [ ] Confirm all three settings persist after closing and reopening the app.
+- [ ] Test scheduling only on a harmless test screen; Android scheduling and Accessibility dispatch cannot guarantee physical tap precision to 1 ms.
