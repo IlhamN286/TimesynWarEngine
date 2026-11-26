@@ -63,3 +63,10 @@ Panel **Kalibrasi Jeda Otomatis (Hybrid / Safe)** memuat:
 - Tombol Close aktif setelah kalibrasi berhasil/gagal.
 - Pengujian unit telah ditambahkan; build CI dan uji perangkat fisik masih menunggu verifikasi.
 - Endpoint jaringan hanya mengukur RTT HTTPS ke endpoint health publik. Hasil bukan ukuran langsung waktu respons Shopee, sehingga rekomendasi otomatis dijaga minimal 320 ms.
+
+## Penyesuaian waktu target dan klik — versi 4.3
+- Format target menggunakan `HH:mm:ss:SSS` (24 jam, WIB), dengan validasi ketat tiap komponen.
+- Koreksi waktu mulai eksekusi: `-500..+500 ms`. Nilai positif memajukan awal urutan klik; nilai negatif mengundurkannya.
+- Delay Target 1 → Target 2 tetap diatur terpisah pada `180..1200 ms`.
+- Interval klik berulang dapat diatur pada `180..1000 ms`, diterapkan pada jeda antar-eksekusi berulang.
+- Batasan: nilai milidetik adalah resolusi input/jadwal, bukan jaminan ketepatan sentuhan fisik 1 ms. Android, beban CPU, frame scheduling, dan Accessibility dispatch dapat menambah variasi.
