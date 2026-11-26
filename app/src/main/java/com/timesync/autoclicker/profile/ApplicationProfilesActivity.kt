@@ -185,10 +185,36 @@ class ApplicationProfilesActivity : Activity() {
         val offset = field((existing?.timing?.executionOffsetMs ?: 0).toString(), "Execution Offset -500..500 ms", true)
         val interval = field((existing?.timing?.clickIntervalMs ?: 250L).toString(), "Click Interval 180..1000 ms", true)
         val delay = field((existing?.timing?.refreshDelayMs ?: 320L).toString(), "Delay Target 180..1200 ms", true)
+        val pickApp = Button(this).apply {
+            text = "PILIH DARI APLIKASI TERPASANG"
+            setOnClickListener {
+                val launchables = packageManager.queryIntentActivities(
+                    Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0
+                ).distinctBy { it.activityInfo.packageName }
+                    .sortedBy { it.loadLabel(packageManager).toString().lowercase() }
+                if (launchables.isEmpty()) {
+                    toast("Tidak ada aplikasi launcher yang dapat dipilih.")
+                } else {
+                    val labels = launchables.map {
+                        it.loadLabel(packageManager).toString() + "  •  " + it.activityInfo.packageName
+                    }.toTypedArray()
+                    AlertDialog.Builder(this@ApplicationProfilesActivity)
+                        .setTitle("Pilih aplikasi")
+                        .setItems(labels) { _, which ->
+                            val selected = launchables[which]
+                            name.setText(selected.loadLabel(packageManager).toString())
+                            pkg.setText(selected.activityInfo.packageName)
+                        }.show()
+                }
+            }
+        }
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(20), dp(8), dp(20), 0)
-            listOf(name, pkg, target, offset, interval, delay).forEach { addView(it) }
+            addView(name)
+            addView(pkg)
+            addView(pickApp)
+            listOf(target, offset, interval, delay).forEach { addView(it) }
         }
         AlertDialog.Builder(this)
             .setTitle(if (existing == null) "Tambah aplikasi" else "Edit profile")
@@ -211,7 +237,7 @@ class ApplicationProfilesActivity : Activity() {
                 if (error != null) {
                     toast(error)
                 } else if (!repository.save(profile)) {
-                    toast("Gagal menyimpan profile. Package name mungkin sudah digunakan.")
+                    toast("Gagal menyimpan profile. Periksa kembali data yang dimasukkan.")
                 } else {
                     renderProfiles()
                     toast("Profile tersimpan")
