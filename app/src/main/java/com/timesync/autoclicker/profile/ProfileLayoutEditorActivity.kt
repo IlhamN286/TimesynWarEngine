@@ -115,7 +115,7 @@ class ProfileLayoutEditorActivity : Activity() {
         val name = EditText(this).apply { setText(action.name); hint = "Nama action" }
         val delay = EditText(this).apply {
             setText(action.delayAfterMs.toString())
-            hint = "Delay setelah action (100–5000 ms)"
+            hint = "Delay khusus (0=profile default, 100–5000 ms)"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
         }
         val content = LinearLayout(this).apply {
@@ -236,7 +236,7 @@ class ProfileLayoutEditorActivity : Activity() {
                                 x = (event.x / width.coerceAtLeast(1)).coerceIn(0f, 1f),
                                 y = (event.y / height.coerceAtLeast(1)).coerceIn(0f, 1f),
                                 order = next,
-                                delayAfterMs = profile.timing.clickIntervalMs
+                                delayAfterMs = 0L
                             )
                         }
                     }
