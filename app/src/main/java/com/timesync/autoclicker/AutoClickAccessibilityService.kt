@@ -39,6 +39,8 @@ import java.util.Random
 import java.util.TimeZone
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
+import com.timesync.autoclicker.profile.ApplicationProfile
+import com.timesync.autoclicker.profile.ActionPoint
 
 class AutoClickAccessibilityService : AccessibilityService() {
 
@@ -60,6 +62,8 @@ class AutoClickAccessibilityService : AccessibilityService() {
     private var target2View: CrosshairTargetView? = null
     private var controlBarView: LinearLayout? = null
     private var floatingClockView: TextView? = null
+    private val profileTargetViews = mutableListOf<Pair<CrosshairTargetView, WindowManager.LayoutParams>>()
+    private var activeProfile: ApplicationProfile? = null
 
     private lateinit var target1Params: WindowManager.LayoutParams
     private lateinit var target2Params: WindowManager.LayoutParams
@@ -138,7 +142,16 @@ class AutoClickAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (!isExecuting.get() || !autoStopOnPageChange || event == null) return
+        if (!isExecuting.get() || event == null) return
+        val selectedProfile = activeProfile
+        if (selectedProfile != null) {
+            val eventPackage = event.packageName?.toString()
+            if (eventPackage != null && eventPackage != selectedProfile.packageName && eventPackage != packageName) {
+                stopExecution("TARGET BERUBAH")
+            }
+            return
+        }
+        if (!autoStopOnPageChange) return
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             try {
                 val pkg = event.packageName?.toString() ?: return
@@ -175,6 +188,7 @@ class AutoClickAccessibilityService : AccessibilityService() {
         isExecuting.set(false)
         handler.removeCallbacksAndMessages(null)
         restoreTargetOverlays()
+        restoreProfileTargetOverlays()
         statusTextRef?.text = label
         statusTextRef?.setTextColor(Color.parseColor("#10B981"))
         btnStartRef?.let {
@@ -210,9 +224,11 @@ class AutoClickAccessibilityService : AccessibilityService() {
         customRefreshDelayMs: Long,
         executionOffsetMs: Long,
         clickIntervalMs: Long,
-        enableAutoStop: Boolean
+        enableAutoStop: Boolean,
+        profile: ApplicationProfile? = null
     ) {
         removeOverlay()
+        activeProfile = profile
         promoteToForeground()
 
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -230,25 +246,36 @@ class AutoClickAccessibilityService : AccessibilityService() {
         val sw = resources.displayMetrics.widthPixels
         val sh = resources.displayMetrics.heightPixels
 
-        target1View = CrosshairTargetView(this, "1", "#FACC15").also { view ->
-            val defaultX = (sw * 0.43).toInt()
-            val defaultY = sh - dp(86)
-            val savedX = prefs.getInt("t1_x_$executionMode", defaultX)
-            val savedY = prefs.getInt("t1_y_$executionMode", defaultY)
-            target1Params = createCrosshairParams(savedX, savedY)
-            attachDragListener(view, target1Params, "t1", executionMode)
-            try { windowManager.addView(view, target1Params) } catch (_: Exception) { }
-        }
-
-        if (executionMode != MODE_SINGLE_TARGET) {
-            target2View = CrosshairTargetView(this, "2", "#4ADE80").also { view ->
-                val defaultX = sw - dp(82)
+        if (profile == null) {
+            target1View = CrosshairTargetView(this, "1", "#FACC15").also { view ->
+                val defaultX = (sw * 0.43).toInt()
                 val defaultY = sh - dp(86)
-                val savedX = prefs.getInt("t2_x_$executionMode", defaultX)
-                val savedY = prefs.getInt("t2_y_$executionMode", defaultY)
-                target2Params = createCrosshairParams(savedX, savedY)
-                attachDragListener(view, target2Params, "t2", executionMode)
-                try { windowManager.addView(view, target2Params) } catch (_: Exception) { }
+                val savedX = prefs.getInt("t1_x_$executionMode", defaultX)
+                val savedY = prefs.getInt("t1_y_$executionMode", defaultY)
+                target1Params = createCrosshairParams(savedX, savedY)
+                attachDragListener(view, target1Params, "t1", executionMode)
+                try { windowManager.addView(view, target1Params) } catch (_: Exception) { }
+            }
+
+            if (executionMode != MODE_SINGLE_TARGET) {
+                target2View = CrosshairTargetView(this, "2", "#4ADE80").also { view ->
+                    val defaultX = sw - dp(82)
+                    val defaultY = sh - dp(86)
+                    val savedX = prefs.getInt("t2_x_$executionMode", defaultX)
+                    val savedY = prefs.getInt("t2_y_$executionMode", defaultY)
+                    target2Params = createCrosshairParams(savedX, savedY)
+                    attachDragListener(view, target2Params, "t2", executionMode)
+                    try { windowManager.addView(view, target2Params) } catch (_: Exception) { }
+                }
+            }
+        } else {
+            profile.layout.actions.filter { it.enabled }.sortedBy { it.order }.forEach { action ->
+                val view = CrosshairTargetView(this, action.order.toString(), "#FACC15")
+                val left = (action.x * sw - dp(27)).toInt().coerceIn(0, (sw - dp(54)).coerceAtLeast(0))
+                val top = (action.y * sh - dp(27)).toInt().coerceIn(0, (sh - dp(54)).coerceAtLeast(0))
+                val params = createCrosshairParams(left, top)
+                profileTargetViews.add(view to params)
+                try { windowManager.addView(view, params) } catch (_: Exception) { }
             }
         }
 
@@ -335,6 +362,24 @@ class AutoClickAccessibilityService : AccessibilityService() {
 
         btnTest.setOnClickListener {
             if (isScheduled.get() || isExecuting.get()) return@setOnClickListener
+            if (activeProfile != null) {
+                val firstAction = activeProfile?.layout?.actions?.filter { it.enabled }?.minByOrNull { it.order }
+                if (firstAction == null) {
+                    statusText.text = "TAMBAHKAN ACTION"
+                    return@setOnClickListener
+                }
+                if (!isTargetPackageActive()) {
+                    statusText.text = "BUKA APP TARGET"
+                    return@setOnClickListener
+                }
+                hideProfileTargetOverlays()
+                statusText.text = "TES ACTION 1..."
+                performProfileTap(firstAction) { success ->
+                    statusText.text = if (success) "TES TERKIRIM" else "TES GAGAL"
+                    handler.postDelayed({ restoreProfileTargetOverlays() }, 900L)
+                }
+                return@setOnClickListener
+            }
             hideTargetOverlaysForClick()
             statusText.text = "TES T1..."
             statusText.setTextColor(Color.parseColor("#38BDF8"))
@@ -430,6 +475,29 @@ class AutoClickAccessibilityService : AccessibilityService() {
             }
         }
         clockHandler.post(ticker)
+    }
+
+    private fun hideProfileTargetOverlays() {
+        profileTargetViews.forEach { (view, params) ->
+            try {
+                view.visibility = View.GONE
+                params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                windowManager.updateViewLayout(view, params)
+            } catch (_: Exception) { }
+        }
+    }
+
+    private fun restoreProfileTargetOverlays() {
+        profileTargetViews.forEach { (view, params) ->
+            try {
+                params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                view.visibility = View.VISIBLE
+                windowManager.updateViewLayout(view, params)
+            } catch (_: Exception) { }
+        }
     }
 
     private fun hideTargetOverlaysForClick() {
@@ -561,6 +629,66 @@ class AutoClickAccessibilityService : AccessibilityService() {
         }
     }
 
+    private fun isTargetPackageActive(): Boolean {
+        val expected = activeProfile?.packageName ?: return true
+        return try { rootInActiveWindow?.packageName?.toString() == expected } catch (_: Exception) { false }
+    }
+
+    fun showProfileOverlay(profile: ApplicationProfile, scheduledEpochMs: Long) {
+        showOverlay(
+            scheduledEpochMs = scheduledEpochMs,
+            mode = MODE_SINGLE_TARGET,
+            customRefreshDelayMs = profile.timing.refreshDelayMs,
+            executionOffsetMs = profile.timing.executionOffsetMs.toLong(),
+            clickIntervalMs = profile.timing.clickIntervalMs,
+            enableAutoStop = true,
+            profile = profile
+        )
+    }
+
+    private fun performProfileTap(action: ActionPoint, onComplete: (Boolean) -> Unit) {
+        val sw = resources.displayMetrics.widthPixels.toFloat()
+        val sh = resources.displayMetrics.heightPixels.toFloat()
+        val x = (action.x * sw).coerceIn(1f, sw - 1f)
+        val y = (action.y * sh + getStatusBarHeight()).coerceIn(1f, sh - 1f)
+        val path = Path().apply { moveTo(x, y) }
+        val gesture = GestureDescription.Builder()
+            .addStroke(GestureDescription.StrokeDescription(path, 0L, 45L))
+            .build()
+        val dispatched = try {
+            dispatchGesture(gesture, object : GestureResultCallback() {
+                override fun onCompleted(gestureDescription: GestureDescription?) { onComplete(true) }
+                override fun onCancelled(gestureDescription: GestureDescription?) { onComplete(false) }
+            }, handler)
+        } catch (_: Exception) { false }
+        if (!dispatched) onComplete(false)
+    }
+
+    private fun executeProfileSequence(statusText: TextView) {
+        val profile = activeProfile ?: return stopExecution("PROFILE HILANG")
+        val actions = profile.layout.actions.filter { it.enabled }.sortedBy { it.order }
+        if (actions.isEmpty()) return stopExecution("TIDAK ADA ACTION")
+        if (!isTargetPackageActive()) return stopExecution("TARGET TIDAK AKTIF")
+        hideProfileTargetOverlays()
+
+        fun runAt(index: Int) {
+            if (!isExecuting.get()) return
+            if (!isTargetPackageActive()) return stopExecution("TARGET BERUBAH")
+            if (index >= actions.size) return stopExecution("PROFILE SELESAI")
+            val action = actions[index]
+            statusText.text = "ACTION " + action.order + "/" + actions.size
+            performProfileTap(action) { success ->
+                if (!success) {
+                    stopExecution("GESTURE GAGAL")
+                } else {
+                    val delay = action.delayAfterMs.takeIf { it > 0L } ?: profile.timing.clickIntervalMs
+                    handler.postDelayed({ runAt(index + 1) }, delay)
+                }
+            }
+        }
+        runAt(0)
+    }
+
     private fun startMonotonicCountdown(statusText: TextView, btnStart: TextView) {
         val ticker = object : Runnable {
             override fun run() {
@@ -579,7 +707,8 @@ class AutoClickAccessibilityService : AccessibilityService() {
                     if (isScheduled.compareAndSet(true, false)) {
                         isExecuting.set(true)
                         statusText.text = "WAR!"
-                        executeFlashSaleSequence(statusText)
+                        if (activeProfile != null) executeProfileSequence(statusText)
+                        else executeFlashSaleSequence(statusText)
                     }
                 } else {
                     val sec = rawRemaining / 1000
@@ -833,6 +962,11 @@ class AutoClickAccessibilityService : AccessibilityService() {
         } catch (_: Exception) { }
         target1View = null
         target2View = null
+        profileTargetViews.forEach { (view, _) ->
+            try { if (view.isAttachedToWindow) windowManager.removeView(view) } catch (_: Exception) { }
+        }
+        profileTargetViews.clear()
+        activeProfile = null
         controlBarView = null
         floatingClockView = null
     }
