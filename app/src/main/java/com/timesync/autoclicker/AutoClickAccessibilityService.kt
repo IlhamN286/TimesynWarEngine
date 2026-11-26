@@ -340,7 +340,9 @@ class AutoClickAccessibilityService : AccessibilityService() {
         val btnClose = createPillButton("✕", "#475569")
 
         btnStart.setOnClickListener {
-            if (activeProfile != null && !isTargetPackageActive()) {
+            if (!isScheduled.get() && !isExecuting.get() &&
+                activeProfile != null && !isTargetPackageActive()
+            ) {
                 statusText.text = "BUKA APP TARGET"
                 return@setOnClickListener
             }
