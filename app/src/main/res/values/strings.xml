@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Timesyn War Engine</string>
+    <string name="accessibility_service_label">Timesyn War Engine (Auto Clicker)</string>
+    <string name="accessibility_service_description">Mesin eksekusi presisi waktu atomik dan bantuan sentuhan otomatis untuk flash sale.</string>
+</resources>
